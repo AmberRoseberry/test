@@ -1,0 +1,68 @@
+'CR300 Series
+'Created by Short Cut (4.2)
+
+'Declare Variables and Units
+Public BattV
+Public PTemp_C
+Public Stage
+Public Discharge
+Public Staff_Gage
+
+Units BattV=Volts
+Units PTemp_C=Deg C
+Units Stage=ft
+Units Discharge=cfs
+Units Staff_Gage=ft
+
+'Define Data Tables
+DataTable(Fifteen_Min,True,-1)
+  DataInterval(0,15,Min,10)
+  Minimum (1,BattV,FP2,False,False)
+  Sample(1,PTemp_C,FP2)
+  Sample(1,Stage,FP2)
+  Sample (1,Discharge,IEEE4)
+  Sample (1,Staff_Gage,FP2)
+EndTable
+
+DataTable(Daily,True,-1)
+  DataInterval(0,1440,Min,10)
+  Minimum(1,BattV,FP2,False,False)
+  Maximum(1,BattV,FP2,False,False)
+  Minimum(1,Stage,FP2,False,False)
+  Maximum(1,Stage,FP2,False,False)
+EndTable
+
+'Main Program
+BeginProg
+  'Main Scan
+  Scan(15,Min,1,0)
+    'Default CR300 Datalogger Battery Voltage measurement 'BattV'
+    Battery(BattV)
+    'Default CR300 Datalogger Processor Temperature measurement 'PTemp_C'
+    PanelTemp(PTemp_C,60)
+
+    SW12 (1 )    'turn sensor power on
+    Delay (0,10,Sec)    'give sensor time to stabilize
+
+    'Generic 4-20 mA Input (using internal shunt) measurement 'Stage'
+    CurrentSE(Stage,1,mV2500,1,True,0,60,1.25,-5)
+    
+    'Discharge Equation
+     Discharge=37.33*(Stage-0.79226)^1.585
+     
+    'Round the Discharge variable
+     Discharge=Round(Discharge,1)
+     
+      'Staff Gage offset
+      Staff_Gage=Stage-0.804
+      
+      'Round the Staff_Gage variable
+      Staff_Gage=Round(Staff_Gage,3)
+
+    SW12 (0)    'turn sensor power off
+
+    'Call Data Tables and Store Data
+    CallTable Fifteen_Min
+    CallTable Daily
+  NextScan
+EndProg
